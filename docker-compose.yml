@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: adcash
+      POSTGRES_PASSWORD: adcash
+      POSTGRES_DB: adcash_influencer
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -10,5 +10,5 @@
     "declarationMap": false,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"]
 }

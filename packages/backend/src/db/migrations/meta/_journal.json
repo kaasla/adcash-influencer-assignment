@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1770197149443,
+      "tag": "0000_create_offers_influencers_custom_payouts",
+      "breakpoints": true
+    }
+  ]
+}
