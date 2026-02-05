@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { asyncHandler } from '../lib/async-handler.js';
-import { notFound } from '../lib/errors.js';
+import { conflict, notFound } from '../lib/errors.js';
 import { validate } from '../lib/validate.js';
+import {
+  createCustomPayoutSchema,
+  customPayoutParamsSchema,
+} from '../schemas/custom-payout-schemas.js';
 import { createOfferSchema, uuidParamSchema, updateOfferSchema } from '../schemas/offer-schemas.js';
+import * as customPayoutService from '../services/custom-payout-service.js';
+import * as influencerService from '../services/influencer-service.js';
 import * as offerService from '../services/offer-service.js';
 
 export const offersRouter = Router();
@@ -180,6 +186,104 @@ offersRouter.delete(
 
     if (!offer) {
       throw notFound(`Offer with id '${id}' not found`);
+    }
+
+    res.status(204).send();
+  }),
+);
+
+/**
+ * @openapi
+ * /api/v1/offers/{offerId}/custom-payouts:
+ *   post:
+ *     tags: [Custom Payouts]
+ *     summary: Create a custom payout for an influencer
+ *     parameters:
+ *       - in: path
+ *         name: offerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateCustomPayout'
+ *     responses:
+ *       201:
+ *         description: The created custom payout
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/CustomPayout'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Offer or influencer not found
+ *       409:
+ *         description: Custom payout already exists
+ */
+offersRouter.post(
+  '/:offerId/custom-payouts',
+  asyncHandler(async (req, res) => {
+    const { offerId } = validate(customPayoutParamsSchema.pick({ offerId: true }), req.params);
+    const data = validate(createCustomPayoutSchema, req.body);
+
+    const offer = await offerService.findOfferById(offerId);
+    if (!offer) {
+      throw notFound(`Offer with id '${offerId}' not found`);
+    }
+
+    const influencer = await influencerService.findInfluencerById(data.influencerId);
+    if (!influencer) {
+      throw notFound(`Influencer with id '${data.influencerId}' not found`);
+    }
+
+    const existing = await customPayoutService.findCustomPayout(offerId, data.influencerId);
+    if (existing) {
+      throw conflict('Custom payout already exists for this influencer and offer');
+    }
+
+    const customPayout = await customPayoutService.createCustomPayout(offerId, data);
+    res.status(201).json(customPayout);
+  }),
+);
+
+/**
+ * @openapi
+ * /api/v1/offers/{offerId}/custom-payouts/{influencerId}:
+ *   delete:
+ *     tags: [Custom Payouts]
+ *     summary: Delete a custom payout
+ *     parameters:
+ *       - in: path
+ *         name: offerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: influencerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       204:
+ *         description: Custom payout deleted
+ *       404:
+ *         description: Custom payout not found
+ */
+offersRouter.delete(
+  '/:offerId/custom-payouts/:influencerId',
+  asyncHandler(async (req, res) => {
+    const { offerId, influencerId } = validate(customPayoutParamsSchema, req.params);
+
+    const deleted = await customPayoutService.deleteCustomPayout(offerId, influencerId);
+    if (!deleted) {
+      throw notFound('Custom payout not found');
     }
 
     res.status(204).send();
