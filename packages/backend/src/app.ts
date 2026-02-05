@@ -1,9 +1,12 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
 import { notFound } from './lib/errors.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
+import { offersRouter } from './routes/offers.js';
 
 export const createApp = () => {
   const app = express();
@@ -16,6 +19,9 @@ export const createApp = () => {
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api/v1/offers', offersRouter);
 
   app.use((_req, _res, next) => {
     next(notFound('Resource not found'));
