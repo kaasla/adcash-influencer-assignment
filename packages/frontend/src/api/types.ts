@@ -30,3 +30,31 @@ export type ApiError = {
     details?: Record<string, string[]>;
   };
 };
+
+export type CreateOfferInput = {
+  title: string;
+  description: string;
+  payoutType: PayoutType;
+  cpaAmount?: string;
+  fixedAmount?: string;
+};
+
+export type UpdateOfferInput = CreateOfferInput;
+
+export type CreateCustomPayoutInput = {
+  influencerId: string;
+  payoutType: PayoutType;
+  cpaAmount?: string;
+  fixedAmount?: string;
+};
+
+export type CustomPayout = {
+  id: string;
+  offerId: string;
+  influencerId: string;
+  payoutType: PayoutType;
+  cpaAmount: string | null;
+  fixedAmount: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
