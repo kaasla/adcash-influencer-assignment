@@ -1,4 +1,15 @@
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import swaggerJsdoc from 'swagger-jsdoc';
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+
+const apiDefinitionGlobs = [
+  path.resolve(currentDir, '../routes/*.ts'),
+  path.resolve(currentDir, '../routes/*.js'),
+  path.resolve(process.cwd(), 'src/routes/*.ts'),
+  path.resolve(process.cwd(), 'dist/routes/*.js'),
+];
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -105,7 +116,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'],
+  apis: apiDefinitionGlobs,
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
