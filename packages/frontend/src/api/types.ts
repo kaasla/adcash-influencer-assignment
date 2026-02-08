@@ -31,6 +31,11 @@ export type ApiError = {
   };
 };
 
+export type CreateInfluencerInput = {
+  name: string;
+  email: string;
+};
+
 export type CreateOfferInput = {
   title: string;
   description: string;

@@ -19,11 +19,10 @@ services:
     build:
       context: .
       dockerfile: packages/backend/Dockerfile
-    ports:
-      - '3000:3000'
     environment:
       DATABASE_URL: postgres://adcash:adcash@postgres:5432/adcash_influencer
       NODE_ENV: production
+      PORT: 3000
     depends_on:
       postgres:
         condition: service_healthy
@@ -33,7 +32,7 @@ services:
       context: .
       dockerfile: packages/frontend/Dockerfile
     ports:
-      - '80:80'
+      - '8080:80'
     depends_on:
       - backend
 

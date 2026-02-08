@@ -1,6 +1,7 @@
 import type {
   ApiError,
   CreateCustomPayoutInput,
+  CreateInfluencerInput,
   CreateOfferInput,
   CustomPayout,
   Influencer,
@@ -29,6 +30,15 @@ const handleEmptyResponse = async (response: Response): Promise<void> => {
 export const fetchInfluencers = async (): Promise<Influencer[]> => {
   const response = await fetch(`${API_BASE}/influencers`);
   return handleResponse<Influencer[]>(response);
+};
+
+export const createInfluencer = async (data: CreateInfluencerInput): Promise<Influencer> => {
+  const response = await fetch(`${API_BASE}/influencers`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<Influencer>(response);
 };
 
 export const fetchInfluencerOffers = async (

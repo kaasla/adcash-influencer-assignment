@@ -17,14 +17,23 @@ RUN pnpm run build
 
 FROM base AS runner
 ENV NODE_ENV=production
-WORKDIR /app/packages/backend
-COPY --from=builder /app/packages/backend/dist ./dist
-COPY --from=builder /app/packages/backend/package.json ./
-COPY --from=builder /app/packages/backend/src/db/schema.ts ./src/db/schema.ts
-COPY --from=builder /app/packages/backend/drizzle.config.ts ./
-COPY --from=deps /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json ../
-COPY --from=builder /app/tsconfig.base.json ../
-RUN pnpm install --frozen-lockfile --prod --filter @adcash/backend...
+WORKDIR /app
 
+# Copy workspace structure
+COPY --from=deps /app/pnpm-lock.yaml /app/pnpm-workspace.yaml /app/package.json ./
+COPY --from=builder /app/tsconfig.base.json ./
+
+# Copy backend package
+COPY --from=builder /app/packages/backend/dist ./packages/backend/dist
+COPY --from=builder /app/packages/backend/package.json ./packages/backend/
+COPY --from=builder /app/packages/backend/src/db/schema.ts ./packages/backend/src/db/schema.ts
+COPY --from=builder /app/packages/backend/drizzle.config.ts ./packages/backend/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile --filter @adcash/backend...
+
+WORKDIR /app/packages/backend
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm exec drizzle-kit push && node dist/server.js"]
+
+# Run schema push then start server
+CMD ["sh", "-c", "pnpm exec drizzle-kit push --force && node dist/server.js"]

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { fetchInfluencerOffers } from '../api/client';
 
 export const useInfluencerOffers = (influencerId: string | null, search: string) => {
@@ -9,5 +9,6 @@ export const useInfluencerOffers = (influencerId: string | null, search: string)
       return fetchInfluencerOffers(influencerId, search);
     },
     enabled: !!influencerId,
+    placeholderData: keepPreviousData,
   });
 };

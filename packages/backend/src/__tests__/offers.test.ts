@@ -2,6 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../app.js';
 
+type InfluencerOffer = {
+  id: string;
+  title: string;
+  payoutType: string;
+  cpaAmount: string | null;
+  fixedAmount: string | null;
+  hasCustomPayout: boolean;
+};
+
+type EntityWithId = { id: string };
+
 const app = createApp();
 
 describe('Influencer-specific offer payouts', () => {
@@ -17,7 +28,7 @@ describe('Influencer-specific offer payouts', () => {
       cpaAmount: '30.00',
     });
     expect(offerRes.status).toBe(201);
-    offerId = offerRes.body.id as string;
+    offerId = (offerRes.body as EntityWithId).id;
 
     const aliceRes = await request(app)
       .post('/api/v1/influencers')
@@ -26,7 +37,7 @@ describe('Influencer-specific offer payouts', () => {
         email: `test-alice-${Date.now()}@example.com`,
       });
     expect(aliceRes.status).toBe(201);
-    aliceId = aliceRes.body.id as string;
+    aliceId = (aliceRes.body as EntityWithId).id;
 
     const bobRes = await request(app)
       .post('/api/v1/influencers')
@@ -35,7 +46,7 @@ describe('Influencer-specific offer payouts', () => {
         email: `test-bob-${Date.now()}@example.com`,
       });
     expect(bobRes.status).toBe(201);
-    bobId = bobRes.body.id as string;
+    bobId = (bobRes.body as EntityWithId).id;
 
     const customPayoutRes = await request(app)
       .post(`/api/v1/offers/${offerId}/custom-payouts`)
@@ -58,12 +69,13 @@ describe('Influencer-specific offer payouts', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
 
-    const testOffer = res.body.find((o: { id: string }) => o.id === offerId);
+    const offers = res.body as InfluencerOffer[];
+    const testOffer = offers.find((o) => o.id === offerId);
     expect(testOffer).toBeDefined();
-    expect(testOffer.payoutType).toBe('fixed');
-    expect(testOffer.fixedAmount).toBe('1000.00');
-    expect(testOffer.cpaAmount).toBeNull();
-    expect(testOffer.hasCustomPayout).toBe(true);
+    expect(testOffer?.payoutType).toBe('fixed');
+    expect(testOffer?.fixedAmount).toBe('1000.00');
+    expect(testOffer?.cpaAmount).toBeNull();
+    expect(testOffer?.hasCustomPayout).toBe(true);
   });
 
   it('should return base payout for Bob (CPA $30)', async () => {
@@ -72,12 +84,13 @@ describe('Influencer-specific offer payouts', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
 
-    const testOffer = res.body.find((o: { id: string }) => o.id === offerId);
+    const offers = res.body as InfluencerOffer[];
+    const testOffer = offers.find((o) => o.id === offerId);
     expect(testOffer).toBeDefined();
-    expect(testOffer.payoutType).toBe('cpa');
-    expect(testOffer.cpaAmount).toBe('30.00');
-    expect(testOffer.fixedAmount).toBeNull();
-    expect(testOffer.hasCustomPayout).toBe(false);
+    expect(testOffer?.payoutType).toBe('cpa');
+    expect(testOffer?.cpaAmount).toBe('30.00');
+    expect(testOffer?.fixedAmount).toBeNull();
+    expect(testOffer?.hasCustomPayout).toBe(false);
   });
 
   it('should filter offers by title search', async () => {
@@ -88,9 +101,10 @@ describe('Influencer-specific offer payouts', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
 
-    const testOffer = res.body.find((o: { id: string }) => o.id === offerId);
+    const offers = res.body as InfluencerOffer[];
+    const testOffer = offers.find((o) => o.id === offerId);
     expect(testOffer).toBeDefined();
-    expect(testOffer.title).toBe('Test Campaign');
+    expect(testOffer?.title).toBe('Test Campaign');
   });
 
   it('should return empty array for non-matching search', async () => {
@@ -100,6 +114,7 @@ describe('Influencer-specific offer payouts', () => {
 
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.find((o: { id: string }) => o.id === offerId)).toBeUndefined();
+    const offers = res.body as InfluencerOffer[];
+    expect(offers.find((o) => o.id === offerId)).toBeUndefined();
   });
 });

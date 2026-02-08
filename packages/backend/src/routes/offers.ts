@@ -5,6 +5,7 @@ import { validate } from '../lib/validate.js';
 import {
   createCustomPayoutSchema,
   customPayoutParamsSchema,
+  type CreateCustomPayoutInput,
 } from '../schemas/custom-payout-schemas.js';
 import { createOfferSchema, uuidParamSchema, updateOfferSchema } from '../schemas/offer-schemas.js';
 import * as customPayoutService from '../services/custom-payout-service.js';
@@ -12,6 +13,31 @@ import * as influencerService from '../services/influencer-service.js';
 import * as offerService from '../services/offer-service.js';
 
 export const offersRouter = Router();
+
+type OfferRecord = NonNullable<Awaited<ReturnType<typeof offerService.findOfferById>>>;
+
+const parseAmount = (amount: string | null | undefined): number | null => {
+  if (amount === null || amount === undefined) return null;
+  const parsed = Number(amount);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizePayout = (payoutType: 'cpa' | 'fixed' | 'cpa_fixed', cpaAmount: string | null | undefined, fixedAmount: string | null | undefined) => ({
+  payoutType,
+  cpaAmount: payoutType === 'cpa' || payoutType === 'cpa_fixed' ? parseAmount(cpaAmount) : null,
+  fixedAmount: payoutType === 'fixed' || payoutType === 'cpa_fixed' ? parseAmount(fixedAmount) : null,
+});
+
+const isSameAsBaseOfferPayout = (offer: OfferRecord, customPayout: CreateCustomPayoutInput): boolean => {
+  const base = normalizePayout(offer.payoutType, offer.cpaAmount, offer.fixedAmount);
+  const next = normalizePayout(customPayout.payoutType, customPayout.cpaAmount, customPayout.fixedAmount);
+
+  return (
+    base.payoutType === next.payoutType &&
+    base.cpaAmount === next.cpaAmount &&
+    base.fixedAmount === next.fixedAmount
+  );
+};
 
 /**
  * @openapi
@@ -244,6 +270,10 @@ offersRouter.post(
     const existing = await customPayoutService.findCustomPayout(offerId, data.influencerId);
     if (existing) {
       throw conflict('Custom payout already exists for this influencer and offer');
+    }
+
+    if (isSameAsBaseOfferPayout(offer, data)) {
+      throw conflict('Custom payout matches the base offer payout. No custom payout is needed');
     }
 
     const customPayout = await customPayoutService.createCustomPayout(offerId, data);
